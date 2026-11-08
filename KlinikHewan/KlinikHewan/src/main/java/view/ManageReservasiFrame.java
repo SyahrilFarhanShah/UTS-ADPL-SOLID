@@ -227,9 +227,7 @@ public class ManageReservasiFrame extends javax.swing.JFrame {
 
     private void btnTambahReservasiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahReservasiActionPerformed
         // TODO add your handling code here:
-        if (cbNamaCustomer.getSelectedItem() == null
-                || cbHewan.getSelectedItem() == null
-                || cbTipeLayanan.getSelectedItem() == null) {
+        if (cbNamaCustomer.getSelectedItem() == null || cbHewan.getSelectedItem() == null || cbTipeLayanan.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, "Lengkapi data!");
             return;
         }
@@ -238,52 +236,14 @@ public class ManageReservasiFrame extends javax.swing.JFrame {
         int idHewan = Integer.parseInt(cbHewan.getSelectedItem().toString().split(" - ")[0]);
         int idLayanan = Integer.parseInt(cbTipeLayanan.getSelectedItem().toString().split(" - ")[0]);
 
-        double totalHarga = 0;
-        String sqlHarga = "SELECT harga FROM layanan WHERE id_layanan = ?";
-
-        try (Connection conn = getConnection(); PreparedStatement psHarga = conn.prepareStatement(sqlHarga)) {
-            psHarga.setInt(1, idLayanan);
-            ResultSet rs = psHarga.executeQuery();
-            if (rs.next()) {
-                totalHarga = rs.getDouble("harga");
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Gagal ambil harga: " + e.getMessage());
-            return;
-        }
-
-        int idDokter = 0;
-        String sqlDokter = "SELECT id_user FROM user WHERE role='dokter' LIMIT 1";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sqlDokter); ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                idDokter = rs.getInt("id_user");
-            } else {
-                JOptionPane.showMessageDialog(this, "Tidak ada dokter tersedia!");
-                return;
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error ambil dokter: " + e.getMessage());
-            return;
-        }
-
-        String sql = "INSERT INTO transaksi(id_customer, id_hewan, id_dokter, id_layanan, total_harga, status) VALUES(?,?,?,?,?, 'pending')";
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, idCustomer);
-            ps.setInt(2, idHewan);
-            ps.setInt(3, idDokter);
-            ps.setInt(4, idLayanan);
-            ps.setDouble(5, totalHarga);
-
-            ps.executeUpdate();
+        try {
+            controller.ReservasiController reservasiController = config.AppConfig.reservasiController();
+            reservasiController.buatReservasi(idCustomer, idHewan, idLayanan);
 
             JOptionPane.showMessageDialog(this, "Reservasi berhasil!");
-
             DashboardUserFrame.refreshReservasi();
-
             dispose();
-
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
         }
     }//GEN-LAST:event_btnTambahReservasiActionPerformed

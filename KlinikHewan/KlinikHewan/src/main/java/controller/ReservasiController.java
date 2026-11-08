@@ -3,18 +3,20 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package controller;
-
+import modul.ReservasiItem;
+import service.IReservasiService;
+import java.util.List;
 /**
  *
  * @author 
  */
-import modul.ReservasiItem;
-import service.ReservasiService;
-import java.util.List;
-
 public class ReservasiController {
 
-    private final ReservasiService service = new ReservasiService();
+    private final IReservasiService service;
+
+    public ReservasiController(IReservasiService service) {
+        this.service = service;
+    }
 
     public List<ReservasiItem> getAllTransaksi() {
         return service.getAllTransaksi();
@@ -42,5 +44,13 @@ public class ReservasiController {
 
     public void deleteTransaksi(int id) {
         service.deleteTransaksi(id);
+    }
+
+    public void buatReservasi(int idCustomer, int idHewan, int idLayanan) {
+        service.buatReservasi(idCustomer, idHewan, idLayanan);
+    }
+    
+    public void updateStatusTransaksi(int id, String status) {
+        service.updateStatusTransaksi(id, status);
     }
 }

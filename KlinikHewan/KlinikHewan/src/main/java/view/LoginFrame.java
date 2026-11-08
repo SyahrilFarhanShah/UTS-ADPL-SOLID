@@ -117,22 +117,22 @@ public class LoginFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
 
         try {
-
             String username = tfUsername.getText();
-            String password;
-            password = String.valueOf(tfPassword.getPassword());
+            String password = String.valueOf(tfPassword.getPassword());
 
-            AuthService authService = new AuthService();
-            UserItem user = authService.login(username, password);
-            JOptionPane.showMessageDialog(this, "Login berhasil. Selamat datang " + SessionUser.role);
+            controller.AuthController authController = config.AppConfig.authController();
+            modul.UserItem user = authController.login(username, password);
+
+            JOptionPane.showMessageDialog(this, "Login berhasil. Selamat datang " + modul.SessionUser.role);
 
             DashboardUserFrame dashboard = new DashboardUserFrame();
             dashboard.setVisible(true);
             this.dispose();
-        } catch (RuntimeException e) {
 
+        } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, e.getMessage(), "Login Gagal", JOptionPane.ERROR_MESSAGE);
         }
+
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void tfUsernameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfUsernameActionPerformed

@@ -149,36 +149,21 @@ public class ManageLayananFrame extends javax.swing.JFrame {
         try {
             double harga = Double.parseDouble(hargaText);
 
-            String sql = "INSERT INTO layanan(nama_layanan, harga, deskripsi) VALUES(?, ?, ?)";
+            controller.LayananController layananController = config.AppConfig.layananController();
+            layananController.addLayanan(new modul.LayananItem(nama, harga, deskripsi));
 
-            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            JOptionPane.showMessageDialog(this, "Berhasil ditambahkan");
+            tfNamaLayanan.setText("");
+            tfHarga.setText("");
+            tfDeskripsi.setText("");
 
-                ps.setString(1, nama);
-                ps.setDouble(2, harga);
-                ps.setString(3, deskripsi);
-
-                ps.executeUpdate();
-
-                JOptionPane.showMessageDialog(this, "Berhasil ditambahkan");
-
-                // ❌ HAPUS: loadDataLayanan(); (tidak ada tabel di form ini)
-                tfNamaLayanan.setText("");
-                tfHarga.setText("");
-                tfDeskripsi.setText("");
-
-                // ✅ TAMBAHKAN: Refresh tabel layanan di Dashboard
-                if (DashboardUserFrame.instance != null) {
-                    DashboardUserFrame.instance.refreshLayanan();
-                }
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            if (DashboardUserFrame.instance != null) {
+                DashboardUserFrame.instance.refreshLayanan();
             }
-
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Harga harus angka!");
-        } catch (HeadlessException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage());
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }//GEN-LAST:event_btnTambahActionPerformed
 

@@ -4,25 +4,24 @@
  */
 package service;
 
+import modul.UserItem;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author attau
  */
-import modul.UserItem;
-import java.sql.*;
-import java.util.ArrayList;
-
-import java.util.List;
-
 public class UserService {
+    private final ConnectionProvider provider;
 
-    private static final String URL = "jdbc:mysql://localhost:3306/db_klinik_hewan";
-    private static final String USER = "root";
-    private static final String PASS = "";
+    public UserService(ConnectionProvider provider) {
+        this.provider = provider;
+    }
 
     private Connection getConnection() throws Exception {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        return DriverManager.getConnection(URL, USER, PASS);
+        return provider.getConnection();
     }
 
     // =============================

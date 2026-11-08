@@ -4,17 +4,20 @@
  */
 package controller;
 
+import modul.HewanItem;
+import service.IHewanService;
+import java.util.List;
 /**
  *
- * @author
+ * @author syahrilfarhan
  */
-import modul.HewanItem;
-import service.HewanService;
-import java.util.List;
-
 public class HewanController {
 
-    private final HewanService service = new HewanService();
+    private final IHewanService service;
+
+    public HewanController(IHewanService service) {
+        this.service = service;
+    }
 
     public List<HewanItem> getAllHewan() {
         return service.getAllHewan();

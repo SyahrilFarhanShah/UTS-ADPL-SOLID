@@ -4,17 +4,21 @@
  */
 package controller;
 
+import modul.LayananItem;
+import service.LayananService;
+import java.util.List;
 /**
  *
  * @author 
  */
-import modul.LayananItem;
-import service.LayananService;
-import java.util.List;
 
 public class LayananController {
 
-    private final LayananService service = new LayananService();
+    private final LayananService service;
+
+    public LayananController(LayananService service) {
+        this.service = service;
+    }
 
     public List<LayananItem> getAllLayanan() {
         return service.getAllLayanan();

@@ -4,25 +4,26 @@
  */
 package service;
 
-/**
- *
- * @author attau
- */
 import modul.ReservasiItem;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReservasiService {
+/**
+ *
+ * @author attau
+ */
+public class ReservasiService implements IReservasiService {
+    private final ConnectionProvider provider;
 
-    private static final String URL  = "jdbc:mysql://localhost:3306/db_klinik_hewan";
-    private static final String USER = "root";
-    private static final String PASS = "";
+    public ReservasiService(ConnectionProvider provider) {
+        this.provider = provider;
+    }
 
     private Connection getConnection() throws Exception {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        return DriverManager.getConnection(URL, USER, PASS);
+        return provider.getConnection();
     }
+    
 
     public List<ReservasiItem> getAllTransaksi() {
 
@@ -238,6 +239,7 @@ public class ReservasiService {
 
         return list;
     }
+    
 
     public List<ReservasiItem> getByCustomer(int idCustomer) {
 
@@ -309,35 +311,18 @@ public class ReservasiService {
     }
 
     public void addTransaksi(ReservasiItem item) {
+        // Ditambahkan kolom 'status' dengan nilai default 'pending'
+        String sql = "INSERT INTO transaksi (id_customer, id_hewan, id_dokter, id_layanan, total_harga, status) VALUES (?, ?, ?, ?, ?, 'pending')";
 
-        String sql = """
-            INSERT INTO transaksi
-            (
-                id_customer,
-                id_hewan,
-                id_dokter,
-                id_layanan,
-                total_harga
-            )
-            VALUES (?, ?, ?, ?, ?)
-        """;
-
-        try (
-            Connection conn = getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)
-        ) {
-
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, item.getIdCustomer());
             ps.setInt(2, item.getIdHewan());
             ps.setInt(3, item.getIdDokter());
             ps.setInt(4, item.getIdLayanan());
             ps.setDouble(5, item.getTotalHarga());
-
             ps.executeUpdate();
-
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Gagal tambah transaksi : " + e.getMessage(), e);
+            throw new RuntimeException("Gagal tambah transaksi : " + e.getMessage(), e);
         }
     }
 
@@ -389,6 +374,61 @@ public class ReservasiService {
         } catch (Exception e) {
             throw new RuntimeException(
                     "Gagal hapus transaksi : " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void buatReservasi(int idCustomer, int idHewan, int idLayanan) {
+        try (Connection conn = getConnection()) {
+            double harga = ambilHarga(conn, idLayanan);
+            int idDokter = pilihDokter(conn);
+
+            String sql = "INSERT INTO transaksi(id_customer, id_hewan, id_dokter, "
+                       + "id_layanan, total_harga, status) VALUES(?,?,?,?,?,'pending')";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, idCustomer);
+                ps.setInt(2, idHewan);
+                ps.setInt(3, idDokter);
+                ps.setInt(4, idLayanan);
+                ps.setDouble(5, harga);
+                ps.executeUpdate();
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Gagal membuat reservasi : " + e.getMessage(), e);
+        }
+    }
+
+    private double ambilHarga(Connection conn, int idLayanan) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT harga FROM layanan WHERE id_layanan = ?")) {
+            ps.setInt(1, idLayanan);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) throw new RuntimeException("Layanan tidak ditemukan!");
+            return rs.getDouble("harga");
+        }
+    }
+
+    private int pilihDokter(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT id_user FROM user WHERE role='dokter' LIMIT 1");
+             ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) throw new RuntimeException("Tidak ada dokter tersedia!");
+            return rs.getInt("id_user");
+        }
+    }
+    
+    @Override
+    public void updateStatusTransaksi(int id, String status) {
+        String sql = "UPDATE transaksi SET status = ? WHERE id_transaksi = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Gagal update status: " + e.getMessage(), e);
         }
     }
 }

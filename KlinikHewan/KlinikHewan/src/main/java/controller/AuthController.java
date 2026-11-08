@@ -4,8 +4,9 @@
  */
 package controller;
 
+import modul.SessionUser;
 import modul.UserItem;
-import service.AuthService;
+import service.IAuthService;
 
 /**
  *
@@ -14,9 +15,18 @@ import service.AuthService;
 
 public class AuthController {
 
-    private final AuthService service = new AuthService();
+    private final IAuthService service;
+
+    public AuthController(IAuthService service) {
+        this.service = service;
+    }
 
     public UserItem login(String username, String password) {
-        return service.login(username, password);
+        UserItem user = service.login(username, password);
+        SessionUser.id = user.getId();
+        SessionUser.nama = user.getNama();
+        SessionUser.username = user.getUsername();
+        SessionUser.role = user.getRole();
+        return user;
     }
 }

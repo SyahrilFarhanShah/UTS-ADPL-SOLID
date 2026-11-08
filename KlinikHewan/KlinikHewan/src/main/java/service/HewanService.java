@@ -4,25 +4,24 @@
  */
 package service;
 
-/**
- *
- * @author 
- */
-
 import modul.HewanItem;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HewanService {
+/**
+ *
+ * @author 
+ */
+public class HewanService implements IHewanService {
+    private final ConnectionProvider provider;
 
-    private static final String URL  = "jdbc:mysql://localhost:3306/db_klinik_hewan";
-    private static final String USER = "root";
-    private static final String PASS = "";
+    public HewanService(ConnectionProvider provider) {
+        this.provider = provider;
+    }
 
     private Connection getConnection() throws Exception {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        return DriverManager.getConnection(URL, USER, PASS);
+        return provider.getConnection();
     }
 
     public List<HewanItem> getAllHewan() {

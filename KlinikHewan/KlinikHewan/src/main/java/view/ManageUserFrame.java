@@ -169,29 +169,18 @@ public class ManageUserFrame extends javax.swing.JFrame {
             return;
         }
 
-        String sql = "INSERT INTO user(nama,username,password,role) VALUES(?,?,?,?)";
+        try {
+     
+            controller.UserController userController = config.AppConfig.userController();
+            userController.addUser(new modul.UserItem(nama, username, password, role));
 
-        try (Connection conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, nama);
-            ps.setString(2, username);
-            ps.setString(3, password);
-            ps.setString(4, role);
-
-            ps.executeUpdate();
             JOptionPane.showMessageDialog(this, "Data berhasil disimpan");
-
-            // ✅ TAMBAHKAN INI: Refresh tabel di Dashboard
             DashboardUserFrame.refreshUser();
-
-            // ✅ TAMBAHKAN INI: Tutup form setelah berhasil
             dispose();
-
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
         }
-    
+
     }//GEN-LAST:event_btnTambahActionPerformed
 
     private void tfPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfPasswordActionPerformed

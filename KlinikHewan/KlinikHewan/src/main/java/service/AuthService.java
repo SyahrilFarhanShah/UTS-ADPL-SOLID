@@ -4,25 +4,22 @@
  */
 package service;
 
+import modul.UserItem;
+import java.sql.*;
+
 /**
  *
  * @author Ray Wishnu
  */
-import modul.SessionUser;
-import modul.UserItem;
-import java.sql.*;
+public class AuthService implements IAuthService {
+    private final ConnectionProvider provider;
 
-public class AuthService {
-
-    private static final String URL = "jdbc:mysql://localhost:3306/db_klinik_hewan";
-
-    private static final String USER = "root";
-    private static final String PASS = "";
+    public AuthService(ConnectionProvider provider) {
+        this.provider = provider;
+    }
 
     private Connection getConnection() throws Exception {
-
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        return DriverManager.getConnection(URL, USER, PASS);
+        return provider.getConnection();
     }
 
     public UserItem login(String username, String password) {
@@ -54,11 +51,6 @@ public class AuthService {
             }
 
             UserItem user = new UserItem(rs.getInt("id_user"),rs.getString("nama"),rs.getString("username"),rs.getString("role"));
-
-            SessionUser.id = user.getId();
-            SessionUser.nama = user.getNama();
-            SessionUser.username = user.getUsername();
-            SessionUser.role = user.getRole();
 
             return user;
 

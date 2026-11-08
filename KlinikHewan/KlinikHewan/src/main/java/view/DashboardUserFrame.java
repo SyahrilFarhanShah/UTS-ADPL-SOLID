@@ -4,16 +4,24 @@
  */
 package view;
 
-import modul.SessionUser;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import config.AppConfig;
+import controller.HewanController;
+import controller.LayananController;
+import controller.ReservasiController;
+import controller.UserController;
+import modul.HewanItem;
+import modul.LayananItem;
+import modul.ReservasiItem;
+import modul.SessionUser; 
+import modul.UserItem;
+import policy.DashboardTab;
+import policy.RolePolicy;
+import policy.RolePolicyRegistry;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import java.util.List;
 //private javax.swing.JTable jTable1;
-
+    
 /**
  *
  * @author attau
@@ -25,6 +33,9 @@ public class DashboardUserFrame extends javax.swing.JFrame {
     /**
      * Creates new form DashboardUserFrame
      */
+    private RolePolicy rolePolicy;
+    public static DashboardUserFrame instance;
+    
     public DashboardUserFrame() {
         if (SessionUser.id == 0) {
             new LoginFrame().setVisible(true);
@@ -32,6 +43,7 @@ public class DashboardUserFrame extends javax.swing.JFrame {
             return;
         }
         initComponents();
+        rolePolicy = RolePolicyRegistry.forRole(SessionUser.role);
         setLocationRelativeTo(null);
         cekRole();
         loadDataUser();
@@ -48,7 +60,6 @@ public class DashboardUserFrame extends javax.swing.JFrame {
         tableDashboardLayanan.setDefaultEditor(Object.class, null);
         jTable5.setDefaultEditor(Object.class, null);
     }
-    public static DashboardUserFrame instance;
 
     public static void refreshHewan() {
         if (instance != null) {
@@ -59,30 +70,30 @@ public class DashboardUserFrame extends javax.swing.JFrame {
 
     private void cekRole() {
 
-        String role = SessionUser.role;
-
-        if (role == null) {
+        if (rolePolicy == null) {
             return;
         }
 
-        switch (role.toLowerCase()) {
+        for (DashboardTab tab : rolePolicy.hiddenTabs()) {
+            dashboard.remove(panelOf(tab));
+        }
+        dashboard.repaint(); 
+    }
 
-            case "staf" -> {
-            }
-
-            case "dokter" -> {
-                dashboard.remove(dashboardUser);
-                dashboard.remove(dashboardHewan);
-                dashboard.remove(dashboardLayanan);
-                dashboard.remove(riwayatTransaksi);
-            }
-
-            case "customer" -> {
-                dashboard.remove(dashboardUser);
-                dashboard.remove(dashboardHewan);
-                dashboard.remove(dahboardReservasi);
-                dashboard.remove(dashboardLayanan);
-            }
+    private javax.swing.JPanel panelOf(DashboardTab tab) {
+        switch (tab) {
+            case USER:
+                return dashboardUser;
+            case HEWAN:
+                return dashboardHewan;
+            case RESERVASI:
+                return dahboardReservasi;
+            case LAYANAN:
+                return dashboardLayanan;
+            case RIWAYAT:
+                return riwayatTransaksi;
+            default:
+                return null;
         }
     }
 
@@ -90,15 +101,10 @@ public class DashboardUserFrame extends javax.swing.JFrame {
 
         DefaultTableModel model = (DefaultTableModel) tableDashboardUser.getModel();
         model.setRowCount(0);
-        String sql = "SELECT nama, role FROM user WHERE nama LIKE ? OR role LIKE ?";
-
-        try (
-                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, "%" + keyword + "%");
-            ps.setString(2, "%" + keyword + "%");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                model.addRow(new Object[]{rs.getString("nama"), rs.getString("role")});
+        try {
+            List<UserItem> list = AppConfig.userController().searchUser(keyword);
+            for (UserItem item : list) {
+                model.addRow(new Object[]{item.getNama(), item.getRole()});
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
@@ -127,20 +133,13 @@ public class DashboardUserFrame extends javax.swing.JFrame {
     private void loadDataLayanan() {
         DefaultTableModel model = (DefaultTableModel) tableDashboardLayanan.getModel();
         model.setRowCount(0);
-
-        String sql = "SELECT nama_layanan, harga, deskripsi FROM layanan ORDER BY id_layanan DESC";
-
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getString("nama_layanan"),
-                    rs.getDouble("harga"),
-                    rs.getString("deskripsi")
-                });
+        try {
+            List<LayananItem> list = AppConfig.layananController().getAllLayanan();
+            for (LayananItem item : list) {
+                model.addRow(new Object[]{item.getNamaLayanan(), item.getHarga(), item.getDeskripsi()});
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error load layanan: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage());
         }
     }
 
@@ -640,17 +639,10 @@ public class DashboardUserFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
         String role = SessionUser.role;
 
-        if ("dokter".equalsIgnoreCase(role)) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Button ini tidak bisa Anda gunakan. Hanya Admin/Staf yang dapat mengelola reservasi.",
-                    "Akses Ditolak",
-                    JOptionPane.WARNING_MESSAGE
-            );
+        if (rolePolicy != null && !rolePolicy.canManageReservasi()) {
+            JOptionPane.showMessageDialog(this, "Button ini tidak bisa Anda gunakan. Hanya Admin/Staf yang dapat mengelola reservasi.", "Akses Ditolak", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        // Jika bukan dokter, buka Manage Reservasi
         ManageReservasiFrame frame = new ManageReservasiFrame();
         frame.setLocationRelativeTo(this);
         frame.setVisible(true);
@@ -659,94 +651,59 @@ public class DashboardUserFrame extends javax.swing.JFrame {
     private void btnSelesaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSelesaiActionPerformed
         // TODO add your handling code here:
         int selectedRow = tableDashboardReservasi.getSelectedRow();
-
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Pilih reservasi yang akan diselesaikan!");
             return;
         }
-
-        // Ambil ID dari kolom tersembunyi (index 0)
         int idTransaksi = Integer.parseInt(tableDashboardReservasi.getValueAt(selectedRow, 0).toString());
 
-        String sql = "UPDATE transaksi SET status = 'selesai' WHERE id_transaksi = ?";
-
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, idTransaksi);
-            ps.executeUpdate();
-
-            JOptionPane.showMessageDialog(this, "Reservasi berhasil diselesaikan dan dipindah ke Riwayat!");
-
-            // Refresh kedua tabel
+        try {
+            AppConfig.reservasiController().updateStatusTransaksi(idTransaksi, "selesai");
+            JOptionPane.showMessageDialog(this, "Reservasi berhasil diselesaikan!");
             loadDataReservasi();
             loadDataTransaksi();
-
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal: " + e.getMessage());
         }
     }//GEN-LAST:event_btnSelesaiActionPerformed
 
     private void loadDataReservasi() {
         DefaultTableModel model = (DefaultTableModel) tableDashboardReservasi.getModel();
         model.setRowCount(0);
-
-        String sql = "SELECT t.id_transaksi, c.nama AS customer, h.nama_hewan, l.nama_layanan "
-                + "FROM transaksi t "
-                + "JOIN user c ON t.id_customer = c.id_user "
-                + "JOIN hewan h ON t.id_hewan = h.id_hewan "
-                + "JOIN layanan l ON t.id_layanan = l.id_layanan "
-                + "WHERE t.status = 'pending' " // ← PENTING!
-                + "ORDER BY t.id_transaksi DESC";
-
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getInt("id_transaksi"), // Kolom 0: ID (tersembunyi)
-                    rs.getString("customer"),
-                    rs.getString("nama_hewan"),
-                    rs.getString("nama_layanan")
-                });
+        try {
+            List<ReservasiItem> list = AppConfig.reservasiController().getAllTransaksi();
+            for (ReservasiItem item : list) {
+                model.addRow(new Object[]{item.getId(), item.getNamaCustomer(), item.getNamaHewan(), item.getNamaLayanan()});
             }
+            tableDashboardReservasi.getColumnModel().getColumn(0).setMinWidth(0);
+            tableDashboardReservasi.getColumnModel().getColumn(0).setMaxWidth(0);
+            tableDashboardReservasi.getColumnModel().getColumn(0).setWidth(0);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error load reservasi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage());
         }
-
-        // Sembunyikan kolom ID
-        tableDashboardReservasi.getColumnModel().getColumn(0).setMinWidth(0);
-        tableDashboardReservasi.getColumnModel().getColumn(0).setMaxWidth(0);
-        tableDashboardReservasi.getColumnModel().getColumn(0).setWidth(0);
     }
+    
     private void loadDataUser() {
         DefaultTableModel model = (DefaultTableModel) tableDashboardUser.getModel();
-
         model.setRowCount(0);
-        String sql = "SELECT nama, role FROM user";
-
-        try (
-                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getString("nama"),
-                    rs.getString("role")});
+        try {
+            List<UserItem> list = AppConfig.userController().getAllUser();
+            for (UserItem item : list) {
+                model.addRow(new Object[]{item.getNama(), item.getRole()});
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
         }
+
     }
 
     private void loadDataHewan() {
         DefaultTableModel model = (DefaultTableModel) tableDashboardHewan.getModel();
         model.setRowCount(0);
-        String sql = "SELECT h.nama_hewan, u.nama AS customer "
-                + "FROM hewan h JOIN user u ON h.id_customer = u.id_user";
-
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getString("nama_hewan"),
-                    rs.getString("customer")
-                });
+        try {
+            List<HewanItem> list = AppConfig.hewanController().getAllHewan();
+            for (HewanItem item : list) {
+                model.addRow(new Object[]{item.getNamaHewan(), item.getNamaCustomer()});
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
@@ -756,27 +713,13 @@ public class DashboardUserFrame extends javax.swing.JFrame {
     private void loadDataTransaksi() {
         DefaultTableModel model = (DefaultTableModel) jTable5.getModel();
         model.setRowCount(0);
-
-        String sql = "SELECT h.nama_hewan, d.nama AS dokter, l.nama_layanan, t.total_harga "
-                + "FROM transaksi t "
-                + "JOIN hewan h ON t.id_hewan = h.id_hewan "
-                + "JOIN user d ON t.id_dokter = d.id_user "
-                + "JOIN layanan l ON t.id_layanan = l.id_layanan "
-                + "WHERE t.status = 'selesai' " // ← PENTING!
-                + "ORDER BY t.id_transaksi DESC";
-
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_klinik_hewan", "root", ""); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getString("nama_hewan"),
-                    rs.getString("dokter"),
-                    rs.getString("nama_layanan"),
-                    rs.getDouble("total_harga")
-                });
+        try {
+            List<ReservasiItem> list = AppConfig.reservasiController().getAllTransaksi();
+            for (ReservasiItem item : list) {
+                model.addRow(new Object[]{item.getNamaHewan(), item.getNamaDokter(), item.getNamaLayanan(), item.getTotalHarga()});
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error load transaksi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage());
         }
     }
 

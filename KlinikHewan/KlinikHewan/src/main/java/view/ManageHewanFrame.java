@@ -168,34 +168,21 @@ public class ManageHewanFrame extends javax.swing.JFrame {
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
         // TODO add your handling code here:
         String namaHewan = tfNamaHewan.getText();
-
         if (cbCustomer.getSelectedItem() == null || namaHewan.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Isi dulu!");
             return;
         }
-
         String selected = cbCustomer.getSelectedItem().toString();
         int idUser = Integer.parseInt(selected.split(" - ")[0]);
 
-        String sql = "INSERT INTO hewan(nama_hewan, id_customer) VALUES(?, ?)";
-
-        try (Connection conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/db_klinik_hewan",
-                "root", ""); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, namaHewan);
-            ps.setInt(2, idUser);
-
-            ps.executeUpdate();
+        try {
+            controller.HewanController hewanController = config.AppConfig.hewanController();
+            hewanController.addHewan(new modul.HewanItem(namaHewan, idUser));
 
             JOptionPane.showMessageDialog(this, "Data berhasil ditambahkan");
-
-            // ? INI YANG UPDATE DASHBOARD
             DashboardUserFrame.refreshHewan();
-
             dispose();
-
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
         }
     }//GEN-LAST:event_btnTambahActionPerformed

@@ -26,6 +26,7 @@ public class ReservasiItem {
     private String namaLayanan;
 
     private double totalHarga;
+    private String status;  
 
     public ReservasiItem(int id,int idCustomer,String namaCustomer,int idHewan,String namaHewan,
             int idDokter,String namaDokter,int idLayanan,String namaLayanan,double totalHarga) {
@@ -42,12 +43,20 @@ public class ReservasiItem {
         this.totalHarga = totalHarga;
     }
 
-    public ReservasiItem(int idCustomer,int idHewan,int idDokter,int idLayanan,double totalHarga) {
+    public ReservasiItem(int id, int idCustomer, String namaCustomer, int idHewan, 
+                         String namaHewan, int idDokter, String namaDokter, 
+                         int idLayanan, String namaLayanan, double totalHarga, String status) {
+        this.id = id;
         this.idCustomer = idCustomer;
+        this.namaCustomer = namaCustomer;
         this.idHewan = idHewan;
+        this.namaHewan = namaHewan;
         this.idDokter = idDokter;
+        this.namaDokter = namaDokter;
         this.idLayanan = idLayanan;
+        this.namaLayanan = namaLayanan;
         this.totalHarga = totalHarga;
+        this.status = status;
     }
 
     public int getId() {
@@ -73,4 +82,25 @@ public class ReservasiItem {
     public double getTotalHarga() {
         return totalHarga;
     }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getNamaCustomer() {
+        return namaCustomer;
+    }
+
+    public String getNamaHewan() {
+        return namaHewan;
+    }
+
+    public String getNamaDokter() {
+        return namaDokter;
+    }
+
+    public String getNamaLayanan() {
+        return namaLayanan;
+    }
 }
+
