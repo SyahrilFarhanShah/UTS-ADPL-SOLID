@@ -149,10 +149,10 @@ public class ManageLayananFrame extends javax.swing.JFrame {
         try {
             double harga = Double.parseDouble(hargaText);
 
-            controller.LayananController layananController = config.AppConfig.layananController();
-            layananController.addLayanan(new modul.LayananItem(nama, harga, deskripsi));
+            config.AppConfig.layananController().addLayanan(new modul.LayananItem(nama, harga, deskripsi));
 
             JOptionPane.showMessageDialog(this, "Berhasil ditambahkan");
+
             tfNamaLayanan.setText("");
             tfHarga.setText("");
             tfDeskripsi.setText("");
@@ -161,7 +161,7 @@ public class ManageLayananFrame extends javax.swing.JFrame {
                 DashboardUserFrame.instance.refreshLayanan();
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Harga harus angka!");
+            JOptionPane.showMessageDialog(this, "Harga harus berupa angka!");
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }

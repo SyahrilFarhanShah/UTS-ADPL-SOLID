@@ -170,13 +170,15 @@ public class ManageUserFrame extends javax.swing.JFrame {
         }
 
         try {
-     
-            controller.UserController userController = config.AppConfig.userController();
-            userController.addUser(new modul.UserItem(nama, username, password, role));
+            config.AppConfig.userController().addUser(new modul.UserItem(nama, username, password, role));
 
             JOptionPane.showMessageDialog(this, "Data berhasil disimpan");
-            DashboardUserFrame.refreshUser();
-            dispose();
+
+            if (DashboardUserFrame.instance != null) {
+                DashboardUserFrame.refreshUser();
+            }
+
+            dispose(); 
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
         }
